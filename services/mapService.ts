@@ -26,6 +26,22 @@ export const fetchMapBusinesses = async (): Promise<Business[]> => {
 
       const description = placemark.getElementsByTagName("description")[0]?.textContent?.trim() || "";
       
+      // Extract coordinates if available
+      const coordinatesStr = placemark.getElementsByTagName("coordinates")[0]?.textContent?.trim();
+      let coordinates: { lat: number; lng: number } | undefined;
+      
+      if (coordinatesStr) {
+        const parts = coordinatesStr.split(',');
+        // KML coordinates are typically: lon,lat,alt
+        if (parts.length >= 2) {
+            const lng = parseFloat(parts[0]);
+            const lat = parseFloat(parts[1]);
+            if (!isNaN(lng) && !isNaN(lat)) {
+                coordinates = { lat, lng };
+            }
+        }
+      }
+
       // Simple heuristic to extract phone numbers from description if they exist in the KML
       const phoneMatch = description.match(/(\(\d{3}\)\s?\d{3}-\d{4})|(\d{3}[-.]\d{3}[-.]\d{4})/);
       const phoneNumber = phoneMatch ? phoneMatch[0] : undefined;
@@ -37,7 +53,8 @@ export const fetchMapBusinesses = async (): Promise<Business[]> => {
         phoneNumber: phoneNumber,
         status: 'confirmed',
         notes: description.slice(0, 100) + (description.length > 100 ? '...' : ''), // Preview of notes
-        category: 'Opposition Member'
+        category: 'Opposition Member',
+        coordinates: coordinates
       });
     }
 

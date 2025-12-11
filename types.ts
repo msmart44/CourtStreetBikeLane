@@ -7,6 +7,10 @@ export interface Business {
   notes?: string;
   status: 'confirmed' | 'pending_details';
   googleMapsLink?: string;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
 }
 
 export interface SearchResult {

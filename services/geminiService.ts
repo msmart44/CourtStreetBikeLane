@@ -5,16 +5,20 @@ const getClient = () => {
   return new GoogleGenAI({ apiKey: process.env.API_KEY });
 };
 
-export const fetchBusinessDetails = async (businessName: string): Promise<SearchResult | null> => {
+export const fetchBusinessDetails = async (businessName: string, coordinates?: { lat: number; lng: number }): Promise<SearchResult | null> => {
   try {
     const ai = getClient();
     
     // We use gemini-2.5-flash for speed and efficiency with the Maps tool
     const modelId = "gemini-2.5-flash";
     
-    // Appending specific location context to ensure we get the Court St location
+    // Use coordinates in prompt if available to increase accuracy
+    const locationContext = coordinates 
+        ? `located near coordinates ${coordinates.lat}, ${coordinates.lng}` 
+        : `located on or near Court Street in Brooklyn, New York (Zip codes 11201, 11231)`;
+
     const prompt = `
-      Find the business "${businessName}" located on or near Court Street in Brooklyn, New York (Zip codes 11201, 11231).
+      Find the business "${businessName}" ${locationContext}.
       I need their phone number and specific street address to contact them.
       
       Please format the output exactly as follows:
@@ -23,13 +27,26 @@ export const fetchBusinessDetails = async (businessName: string): Promise<Search
       Phone: [Phone Number]
     `;
 
+    // Configure tool with location context if available
+    const config: any = {
+      tools: [{ googleMaps: {} }]
+    };
+
+    if (coordinates) {
+        config.toolConfig = {
+            retrievalConfig: {
+                latLng: {
+                    latitude: coordinates.lat,
+                    longitude: coordinates.lng
+                }
+            }
+        };
+    }
+
     const response = await ai.models.generateContent({
       model: modelId,
       contents: prompt,
-      config: {
-        tools: [{ googleMaps: {} }],
-        // Note: responseMimeType is NOT supported with googleMaps
-      },
+      config: config,
     });
 
     const text = response.text || "";

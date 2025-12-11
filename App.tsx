@@ -36,7 +36,8 @@ const App: React.FC = () => {
                     // Prefer existing manual data if available, otherwise map data
                     phoneNumber: existing.phoneNumber || mapBiz.phoneNumber,
                     notes: existing.notes || mapBiz.notes,
-                    status: existing.status
+                    status: existing.status,
+                    coordinates: existing.coordinates || mapBiz.coordinates
                 };
             }
             return mapBiz;
@@ -69,7 +70,8 @@ const App: React.FC = () => {
             // Small delay between requests
             await new Promise(resolve => setTimeout(resolve, 800));
             
-            const details = await fetchBusinessDetails(biz.name);
+            // Pass coordinates to improve search accuracy
+            const details = await fetchBusinessDetails(biz.name, biz.coordinates);
             
             if (details) {
                 setBusinesses(currentList => currentList.map(item => {
